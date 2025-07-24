@@ -29,6 +29,16 @@ jobs:
     - name: Install dependencies
       run: npm install
 
+    - name: Debug environment (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        echo "Node version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        echo "CSC_IDENTITY_AUTO_DISCOVERY: ${{ env.CSC_IDENTITY_AUTO_DISCOVERY }}"
+        echo "Checking custom_win_sign.js..."
+        if (Test-Path "custom_win_sign.js") { echo "custom_win_sign.js exists" } else { echo "custom_win_sign.js not found" }
+      shell: powershell
+
     - name: Build for Windows
       run: npm run package
       env:
@@ -59,6 +69,13 @@ jobs:
 
     - name: Install dependencies
       run: npm install
+
+    - name: Debug environment (macOS)
+      run: |
+        echo "Node version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        echo "CSC_IDENTITY_AUTO_DISCOVERY: $CSC_IDENTITY_AUTO_DISCOVERY"
+        ls -la | grep -E "(custom_|sign|\.p12|\.pem)" || echo "No signing files found"
 
     - name: Build for macOS
       run: npm run package
