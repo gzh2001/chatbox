@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkxyz_chatboxapp_ce=self.webpackChunkxyz_chatboxapp_ce||[]).push([[9986],{39986:(e,c,t)=>{t.r(c),t.d(c,{component:()=>o});var n=t(52166),p=t(96540),s=t(8097);const o=function(){const e=(0,s.L0)(),c=(0,n.Z)();return(0,p.useEffect)((()=>{e||c({to:"/settings/provider",replace:!0})}),[e,c]),null}}}]);

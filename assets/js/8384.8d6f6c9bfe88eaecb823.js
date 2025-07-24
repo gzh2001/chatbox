@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkxyz_chatboxapp_ce=self.webpackChunkxyz_chatboxapp_ce||[]).push([[8384],{8384:(e,c,t)=>{t.r(c),t.d(c,{component:()=>p});var n=t(52166),a=t(96540),o=t(8097);const p=function(){const e=(0,o.L0)(),c=(0,n.Z)();return(0,a.useEffect)((()=>{e||c({to:"/settings/provider/chatbox-ai",replace:!0})}),[e,c]),null}}}]);

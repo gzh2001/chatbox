@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkxyz_chatboxapp_ce=self.webpackChunkxyz_chatboxapp_ce||[]).push([[6452],{6452:(e,c,a)=>{a.d(c,{createPacketServices:()=>p.$});var p=a(71609);a(64131)}}]);
