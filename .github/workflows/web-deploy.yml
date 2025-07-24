@@ -1,0 +1,80 @@
+name: Web Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  workflow_dispatch:
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.node-version'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build web version
+      run: npm run build:web
+      env:
+        NODE_ENV: production
+        CHATBOX_BUILD_PLATFORM: web
+
+    - name: Upload web build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: web-build
+        path: |
+          release/app/dist/renderer/
+        retention-days: 30
+
+    - name: Deploy to GitHub Pages (if enabled)
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./release/app/dist/renderer
+        cname: # Add your custom domain here if needed
+      continue-on-error: true
+
+  web-test:
+    runs-on: ubuntu-latest
+    needs: build-web
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.node-version'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Download web build
+      uses: actions/download-artifact@v4
+      with:
+        name: web-build
+        path: ./release/app/dist/renderer
+
+    - name: Test web build serving
+      run: |
+        npm run serve:web &
+        SERVER_PID=$!
+        sleep 5
+        curl -f http://localhost:3000 || exit 1
+        kill $SERVER_PID

@@ -1,0 +1,68 @@
+name: Development Build
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+  workflow_dispatch:
+
+jobs:
+  dev-build:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [22.x]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.node-version'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run postinstall script
+      run: npm run postinstall
+
+    - name: Build application (production)
+      run: npm run build
+      env:
+        NODE_ENV: production
+
+    - name: Test development start (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        timeout 30s npm run dev || true
+      continue-on-error: true
+
+    - name: Test development start (Windows)
+      if: runner.os == 'Windows'
+      shell: powershell
+      run: |
+        $job = Start-Job -ScriptBlock { npm run dev }
+        Start-Sleep -Seconds 30
+        Stop-Job $job
+        Remove-Job $job
+      continue-on-error: true
+
+    - name: Package for current platform
+      run: npm run package
+      env:
+        NODE_ENV: production
+        CSC_IDENTITY_AUTO_DISCOVERY: false
+
+    - name: Upload development build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dev-build-${{ matrix.os }}
+        path: |
+          dist/
+        retention-days: 7

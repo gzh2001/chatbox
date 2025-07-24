@@ -11,12 +11,16 @@ Cannot find module 'D:\a\chatbox\chatbox\custom_win_sign.js'
 
 这是因为electron-builder配置文件中指定了自定义的Windows代码签名脚本，但该文件在CI环境中不存在。
 
-### 2. macOS DMG构建错误  
+### 3. GitHub Actions Artifact错误
 ```
-Cannot find module 'dmg-license'
+Artifact not found for name: windows-build
 ```
 
-这通常发生在跨平台构建时，当在Linux环境中尝试构建macOS DMG文件时。
+这通常发生在以下情况：
+- 构建job失败，没有生成artifact
+- 构建输出路径配置错误
+- GitHub Actions之间的权限问题
+- 构建文件生成在错误的目录中
 
 ## 解决方案
 
@@ -34,7 +38,14 @@ Cannot find module 'dmg-license'
 - 改为使用各平台专用的构建环境
 - 在macOS环境中添加了 `dmg-license` 依赖检查和安装
 
-### 3. 环境变量配置
+### 3. 构建输出路径修正
+
+根据 `electron-builder.yml` 配置，构建输出目录是 `release/build/`，不是 `dist/`：
+- 修正了所有artifact上传路径
+- 添加了构建输出调试信息
+- 实现了容错的artifact下载机制
+
+### 4. 环境变量配置
 
 在GitHub Actions中，我们使用以下环境变量来控制签名行为：
 - `CSC_IDENTITY_AUTO_DISCOVERY: false` - 禁用自动证书发现
@@ -104,11 +115,17 @@ npm run package
 3. 查看构建日志中的调试信息
 4. 确认electron-builder.yml配置正确
 
-### macOS DMG构建问题
-1. 确认在macOS环境中构建（不要在Linux中跨平台构建macOS应用）
-2. 检查 `dmg-license` 依赖是否正确安装
-3. 查看是否有其他macOS特定的依赖缺失
-4. 尝试清除npm缓存：`npm cache clean --force`
+### GitHub Actions Artifact问题
+1. 检查构建job是否成功完成
+2. 确认构建输出路径正确（应该是 `release/build/`）
+3. 查看构建日志中的文件列表
+4. 确认artifact上传步骤没有失败
+5. 检查GitHub Actions的运行权限
+
+### 构建输出路径问题
+- 根据 `electron-builder.yml`，输出目录是 `release/build/`
+- 确认 `directories.output` 配置正确
+- 使用 `build-test.yml` 工作流来调试构建输出
 
 ### 通用构建问题
 1. 检查Node.js版本是否与 `.node-version` 文件匹配

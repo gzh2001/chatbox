@@ -1,0 +1,76 @@
+name: Build Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/**'
+      - 'package.json'
+      - 'electron-builder.yml'
+
+jobs:
+  test-build:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.node-version'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run build (no package)
+      run: npm run build
+      env:
+        NODE_ENV: production
+
+    - name: List build output after npm run build
+      shell: bash
+      run: |
+        echo "=== After npm run build ==="
+        echo "Current directory:"
+        pwd
+        echo "Directory contents:"
+        ls -la
+        echo "Dist directory:"
+        if [ -d "dist" ]; then ls -la dist/; else echo "dist not found"; fi
+        echo "Release directory:"
+        if [ -d "release" ]; then find release/ -type f | head -10; else echo "release not found"; fi
+
+    - name: Test package command (with error handling)
+      shell: bash
+      run: |
+        echo "=== Testing package command ==="
+        npm run package || echo "Package command failed"
+      env:
+        NODE_ENV: production
+        CSC_IDENTITY_AUTO_DISCOVERY: false
+      continue-on-error: true
+
+    - name: List all output directories
+      shell: bash
+      run: |
+        echo "=== Final directory scan ==="
+        echo "Current directory contents:"
+        ls -la
+        echo ""
+        echo "All executable/installer files found:"
+        find . -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) 2>/dev/null || echo "No installer files found"
+        echo ""
+        echo "Release directory structure:"
+        if [ -d "release" ]; then
+          find release/ -type f | head -20
+        else
+          echo "release directory not found"
+        fi
