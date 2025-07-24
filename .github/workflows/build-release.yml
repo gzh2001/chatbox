@@ -70,12 +70,25 @@ jobs:
     - name: Install dependencies
       run: npm install
 
+    - name: Install additional macOS build dependencies
+      run: |
+        # Install dmg-license if it's missing (this can happen in some CI environments)
+        if ! npm list dmg-license > /dev/null 2>&1; then
+          echo "Installing dmg-license..."
+          npm install dmg-license --save-optional || echo "dmg-license installation failed, continuing..."
+        fi
+      continue-on-error: true
+
     - name: Debug environment (macOS)
       run: |
         echo "Node version: $(node --version)"
         echo "NPM version: $(npm --version)"
         echo "CSC_IDENTITY_AUTO_DISCOVERY: $CSC_IDENTITY_AUTO_DISCOVERY"
+        echo "Platform: $(uname -s)"
+        echo "Architecture: $(uname -m)"
         ls -la | grep -E "(custom_|sign|\.p12|\.pem)" || echo "No signing files found"
+        echo "Checking electron-builder dependencies..."
+        npm list electron-builder dmg-builder 2>/dev/null || echo "Some packages not found (this may be normal)"
 
     - name: Build for macOS
       run: npm run package
@@ -124,36 +137,8 @@ jobs:
           dist/*.rpm
         retention-days: 30
 
-  build-all-platforms:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version-file: '.node-version'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Build for all platforms
-      run: npm run package:all
-      env:
-        NODE_ENV: production
-        CSC_IDENTITY_AUTO_DISCOVERY: false
-
-    - name: Upload all platform artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: all-platforms-build
-        path: |
-          dist/
-        retention-days: 30
+  # Cross-platform build removed due to platform-specific dependency issues
+  # Individual platform builds above provide better compatibility and reliability
 
   create-release:
     runs-on: ubuntu-latest

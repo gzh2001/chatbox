@@ -2,12 +2,21 @@
 
 ## 问题背景
 
-在Windows平台构建时，可能会遇到以下错误：
+在构建过程中，可能会遇到以下错误：
+
+### 1. Windows代码签名错误
 ```
 Cannot find module 'D:\a\chatbox\chatbox\custom_win_sign.js'
 ```
 
 这是因为electron-builder配置文件中指定了自定义的Windows代码签名脚本，但该文件在CI环境中不存在。
+
+### 2. macOS DMG构建错误  
+```
+Cannot find module 'dmg-license'
+```
+
+这通常发生在跨平台构建时，当在Linux环境中尝试构建macOS DMG文件时。
 
 ## 解决方案
 
@@ -18,7 +27,14 @@ Cannot find module 'D:\a\chatbox\chatbox\custom_win_sign.js'
 - 在没有签名证书时跳过代码签名
 - 只在有适当证书和环境时执行实际签名
 
-### 2. 环境变量配置
+### 2. 跨平台构建优化
+
+为了避免平台特定的依赖问题：
+- 移除了在单一环境中的跨平台构建 (`npm run package:all`)
+- 改为使用各平台专用的构建环境
+- 在macOS环境中添加了 `dmg-license` 依赖检查和安装
+
+### 3. 环境变量配置
 
 在GitHub Actions中，我们使用以下环境变量来控制签名行为：
 - `CSC_IDENTITY_AUTO_DISCOVERY: false` - 禁用自动证书发现
@@ -80,12 +96,25 @@ npm run package
 
 ## 故障排除
 
-如果仍然遇到签名相关的错误：
+如果仍然遇到构建相关的错误：
 
+### Windows签名问题
 1. 确认 `custom_win_sign.js` 文件存在
 2. 检查环境变量设置
 3. 查看构建日志中的调试信息
 4. 确认electron-builder.yml配置正确
+
+### macOS DMG构建问题
+1. 确认在macOS环境中构建（不要在Linux中跨平台构建macOS应用）
+2. 检查 `dmg-license` 依赖是否正确安装
+3. 查看是否有其他macOS特定的依赖缺失
+4. 尝试清除npm缓存：`npm cache clean --force`
+
+### 通用构建问题
+1. 检查Node.js版本是否与 `.node-version` 文件匹配
+2. 确认所有依赖都已正确安装：`npm install`
+3. 清理构建目录：`npm run clean` 或手动删除 `dist/` 和 `release/` 目录
+4. 检查系统资源（磁盘空间、内存等）
 
 ## 生产发布
 
